@@ -18,10 +18,10 @@ app.use(express.json());
 
 const allowedOrigins = [
   'http://localhost',
-  'http://localhost:5173',
-  'https://localhost:5173',
-  'capacitor://localhost',
-  'ionic://localhost',
+  //'http://localhost:5173',
+  //'https://localhost:5173',
+  //'capacitor://localhost',
+  //'ionic://localhost',
   'https://localhost:5173',
   'https://geolocalizaci-n-escolar.vercel.app'   
 ];
