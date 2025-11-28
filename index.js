@@ -17,6 +17,11 @@ app.set('trust proxy', 1);
 app.use(express.json());
 
 const allowedOrigins = [
+  'http://localhost',
+  'http://localhost:5173',
+  'https://localhost:5173',
+  'capacitor://localhost',
+  'ionic://localhost',
   'https://localhost:5173',
   'https://geolocalizaci-n-escolar.vercel.app'   
 ];
@@ -37,7 +42,10 @@ app.use(cors({
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"],
+    credentials: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
   }
 });
 
