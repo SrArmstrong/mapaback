@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const speakeasy = require('speakeasy');
 const db = require('../config/db');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const jwt = require('jsonwebtoken');
@@ -32,26 +33,40 @@ function authenticateToken(req, res, next) {
 }
 
 router.post('/register', authenticateToken, async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  // Encriptar contraseña
-  const passwordHash = await bcrypt.hash(password, 10);
+    // Verificar si ya existe el usuario
+    const userRef = db.collection('users').doc(email);
+    const userDoc = await userRef.get();
 
-  // Generar secreto TOTP
-  const totpSecret = speakeasy.generateSecret({ length: 20 });
+    if (userDoc.exists) {
+      return res.status(400).json({ message: 'El email ya está registrado' });
+    }
 
-  // Guardar en Firestore
-  await db.collection('users').doc(email).set({
-    email,
-    passwordHash,
-    totpSecret: totpSecret.base32
-  });
+    // Encriptar contraseña
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  res.json({
-    message: 'Usuario registrado',
-    totpSecret: totpSecret.otpauth_url
-  });
+    // Generar secreto TOTP
+    const totpSecret = speakeasy.generateSecret({ length: 20 });
+
+    // Guardar en Firestore
+    await userRef.set({
+      email,
+      passwordHash,
+      totpSecret: totpSecret.base32
+    });
+
+    res.json({
+      message: 'Usuario registrado',
+      totpSecret: totpSecret.otpauth_url
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al registrar usuario' });
+  }
 });
+
 
 router.post('/login', loginLimiter, async (req, res) => {
   const { email, password, token } = req.body;
