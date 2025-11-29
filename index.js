@@ -95,7 +95,7 @@ const allowedOrigins = [
 // Configuración global de CORS (solo orígenes permitidos)
 const globalCors = cors({
   origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('No accesible'));
@@ -104,6 +104,7 @@ const globalCors = cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 });
+
 
 // Configuración especial para /events (acepta !origin)
 const eventsCors = cors({
@@ -133,12 +134,15 @@ const io = new Server(server, {
   }
 });
 
+
 // Inicializa WebSockets
 socketManager(io);
 
 // Rutas
 app.use('/auth', globalCors, authRoutes);   // aplica CORS global
 app.use('/events', eventsCors, eventRoutes(io)); // aplica CORS especial
+
+console.log("🔎 Origin recibido:", origin);
 
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
