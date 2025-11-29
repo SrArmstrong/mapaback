@@ -67,6 +67,7 @@ server.listen(PORT, () => {
 });
 */
 // index.js
+// index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -117,9 +118,6 @@ const eventsCors = cors({
   credentials: true
 });
 
-// Aplica CORS global a todas las rutas excepto /events
-app.use(globalCors);
-
 // WebSockets
 const io = new Server(server, {
   cors: {
@@ -139,10 +137,8 @@ const io = new Server(server, {
 socketManager(io);
 
 // Rutas
-app.use('/auth', authRoutes);
-
-// Solo aquí permites !origin
-app.use('/events', eventsCors, eventRoutes(io));
+app.use('/auth', globalCors, authRoutes);   // aplica CORS global
+app.use('/events', eventsCors, eventRoutes(io)); // aplica CORS especial
 
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
