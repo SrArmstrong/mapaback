@@ -1,4 +1,3 @@
-/*
 // index.js
 require('dotenv').config();
 const express = require('express');
@@ -18,6 +17,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 
 const allowedOrigins = [
+  'https://localhost',
   'http://localhost',
   //'http://localhost:5173',
   //'https://localhost:5173',
@@ -65,9 +65,10 @@ app.use('/events', eventRoutes(io));
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
-*/
+
 // index.js
 // index.js
+/*
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -165,3 +166,4 @@ app.use('/events', eventsCors, eventRoutes(io)); // aplica CORS especial
 server.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+*/
