@@ -1,3 +1,4 @@
+// routes/events.js
 const express = require('express');
 const db = require('../config/db');
 const jwt = require('jsonwebtoken');
