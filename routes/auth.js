@@ -19,15 +19,15 @@ const loginLimiter = rateLimit({
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"
+  const token = authHeader && authHeader.split(' ')[1]; // Baerer
 
   if (!token) return res.status(401).json({ error: 'Permiso denegado' });
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalido/Expirado' });
 
-    req.user = user; // Guardamos info del usuario en la request
-    next(); // Continuamos al siguiente middleware/endpoint
+    req.user = user;
+    next();
   });
 }
 
@@ -35,18 +35,15 @@ router.post('/register', authenticateToken, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Verificar si ya existe el usuario
     const userRef = db.collection('users').doc(email);
     const userDoc = await userRef.get();
 
     if (userDoc.exists) {
-      return res.status(400).json({ message: 'El email ya está registrado' });
+      return res.status(400).json({ message: 'El usuario ya está registrado' });
     }
 
-    // Encriptar contraseña
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Generar secreto TOTP
     const totpSecret = speakeasy.generateSecret({ length: 20 });
 
     // Guardar en Firestore
@@ -75,11 +72,10 @@ router.post('/login', loginLimiter, async (req, res) => {
 
   const user = userDoc.data();
 
-  // Validar contraseña
   const validPassword = await bcrypt.compare(password, user.passwordHash);
   if (!validPassword) return res.status(401).json({ error: 'Contraseña incorrecta' });
 
-  // Validar TOTP
+  // TOTP
   const validToken = speakeasy.totp.verify({
     secret: user.totpSecret,
     encoding: 'base32',
@@ -92,7 +88,7 @@ router.post('/login', loginLimiter, async (req, res) => {
   const bearerToken = jwt.sign(
     { email: user.email }, 
     process.env.JWT_SECRET, 
-    { expiresIn: '15m' }
+    { expiresIn: '30m' }
   );
 
   res.json({
