@@ -1,23 +1,9 @@
 const express = require('express');
 const db = require('../config/db');
-const jwt = require('jsonwebtoken');
+const authenticateToken = require('../middleware/auth'); 
 
 module.exports = function (io) {
   const router = express.Router();
-
-  // 🔐 Middleware de autenticación
-  function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.status(401).json({ error: 'Permiso denegado' });
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) return res.status(403).json({ error: 'Token inválido o expirado' });
-      req.user = user;
-      next();
-    });
-  }
 
   // 📌 Crear un nuevo profesor
   router.post('/', authenticateToken, async (req, res) => {
