@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-
+const rateLimit = require("express-rate-limit");
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
 const cubiculoRoutes = require('./routes/cubiculos');
@@ -17,6 +17,15 @@ const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 app.use(express.json());
+
+// Rate limit global
+const globalLimiter = rateLimit({
+  windowMs: 20 * 60 * 1000,
+  max: 100,                
+  message: { error: "Demasiadas peticiones" }
+});
+
+app.use(globalLimiter);
 
 const allowedOrigins = [
   'https://localhost',
