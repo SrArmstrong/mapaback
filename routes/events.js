@@ -6,7 +6,7 @@ const authenticateToken = require('../middleware/auth');
 module.exports = function (io) {
   const router = express.Router();
 
-  // 📌 Crear evento
+  // Crear evento
   router.post('/', authenticateToken, async (req, res) => {
     const { latitude, longitude, title, description, codigo } = req.body;
 
@@ -23,7 +23,6 @@ module.exports = function (io) {
 
       await db.collection('events').doc(codigo).set(newEvent);
 
-      // 🔥 Emitir evento en tiempo real
       io.emit('event.created', newEvent);
 
       res.json({ message: 'Evento creado correctamente' });
@@ -32,7 +31,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Leer todos los eventos
+  // Ver eventos
   router.get('/', async (req, res) => {
     try {
       const snapshot = await db.collection('events').get();
@@ -43,7 +42,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Leer evento por código
+  // Ver evento por código
   router.get('/:codigo', authenticateToken, async (req, res) => {
     try {
       const doc = await db.collection('events').doc(req.params.codigo).get();
@@ -54,14 +53,13 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Actualizar evento
+  // Actualizar evento
   router.put('/:codigo', authenticateToken, async (req, res) => {
     try {
       await db.collection('events').doc(req.params.codigo).update(req.body);
 
       const updatedEvent = { codigo: req.params.codigo, ...req.body };
 
-      // 🔥 Emitir evento actualizado
       io.emit('event.updated', updatedEvent);
 
       res.json({ message: 'Evento actualizado correctamente' });
@@ -70,12 +68,11 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Eliminar evento
+  // Eliminar evento
   router.delete('/:codigo', authenticateToken, async (req, res) => {
     try {
       await db.collection('events').doc(req.params.codigo).delete();
 
-      // 🔥 Emitir evento eliminado
       io.emit('event.deleted', { codigo: req.params.codigo });
 
       res.json({ message: 'Evento eliminado correctamente' });

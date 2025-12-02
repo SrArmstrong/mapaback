@@ -5,7 +5,7 @@ const authenticateToken = require('../middleware/auth');
 module.exports = function (io) {
   const router = express.Router();
 
-  // 📌 Crear un nuevo cubículo
+  // Nuevo cubículo
   router.post('/', authenticateToken, async (req, res) => {
     try {
       const { 
@@ -22,13 +22,12 @@ module.exports = function (io) {
         });
       }
 
-      // Generar código único si no se proporciona
       let codigo = req.body.codigo;
       if (!codigo) {
         codigo = `${edificio}-${numeroCubiculo}-${planta}`.replace(/\s+/g, '_').toUpperCase();
       }
 
-      // Verificar si ya existe un cubículo con el mismo código
+      // Código del cubiculo
       const existingDoc = await db.collection('cubiculos').doc(codigo).get();
       if (existingDoc.exists) {
         return res.status(400).json({ 
@@ -36,7 +35,7 @@ module.exports = function (io) {
         });
       }
 
-      // Verificar si el profesor existe (si se asigna uno)
+      // Verificar existencia del profesor
       if (profesorId) {
         const profesorDoc = await db.collection('profesores').doc(profesorId).get();
         if (!profesorDoc.exists) {
@@ -58,7 +57,7 @@ module.exports = function (io) {
 
       await db.collection('cubiculos').doc(codigo).set(nuevoCubiculo);
 
-      // 🔥 Emitir en tiempo real
+      // Conexión Socket
       io.emit('cubiculo.created', nuevoCubiculo);
 
       res.status(201).json({ 
@@ -71,17 +70,17 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener todos los cubículos
-  router.get('/', authenticateToken, async (req, res) => {
+  // Mostrar cubículos
+  router.get('/', async (req, res) => {
     try {
       const snapshot = await db.collection('cubiculos').get();
       
-      // Transformar los datos para incluir información del profesor
+      // Combinar datos de profesor si existe
       const cubiculos = await Promise.all(
         snapshot.docs.map(async (doc) => {
           const cubiculoData = doc.data();
           
-          // Si tiene profesor asignado, obtener sus datos
+          // Obtener datos del profesor si existe
           if (cubiculoData.profesorId) {
             const profesorDoc = await db.collection('profesores').doc(cubiculoData.profesorId).get();
             if (profesorDoc.exists) {
@@ -105,7 +104,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener cubículo por código
+  // Obtener cubículo especifico
   router.get('/:codigo', authenticateToken, async (req, res) => {
     try {
       const doc = await db.collection('cubiculos').doc(req.params.codigo).get();
@@ -133,7 +132,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Actualizar cubículo
+  // Actualizar cubículo
   router.put('/:codigo', authenticateToken, async (req, res) => {
     try {
       const { codigo } = req.params;
@@ -157,13 +156,12 @@ module.exports = function (io) {
         }
       }
 
-      // Añadir timestamp de actualización
+      // Añadir timestamp y usuario que actualiza
       updateData.updatedAt = new Date().toISOString();
       updateData.updatedBy = req.user.email;
 
       await db.collection('cubiculos').doc(codigo).update(updateData);
 
-      // 🔥 Emitir en tiempo real
       const updatedCubiculo = { codigo, ...updateData };
       io.emit('cubiculo.updated', updatedCubiculo);
 
@@ -177,7 +175,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Eliminar cubículo
+  // Eliminar cubículo
   router.delete('/:codigo', authenticateToken, async (req, res) => {
     try {
       const { codigo } = req.params;
@@ -190,7 +188,6 @@ module.exports = function (io) {
 
       await db.collection('cubiculos').doc(codigo).delete();
 
-      // 🔥 Emitir en tiempo real
       io.emit('cubiculo.deleted', { codigo });
 
       res.json({ message: 'Cubículo eliminado correctamente' });
@@ -200,7 +197,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Buscar cubículos por edificio o planta
+  // Buscar cubículos por edificio o planta (Prueba por aplicar)
   router.get('/buscar/filtros', authenticateToken, async (req, res) => {
     try {
       const { edificio, planta } = req.query;
@@ -222,7 +219,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener cubículos disponibles (sin profesor asignado)
+  // Obtener cubículos disponibles (sin profesor asignado)
   router.get('/disponibles', authenticateToken, async (req, res) => {
     try {
       const snapshot = await db.collection('cubiculos')

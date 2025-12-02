@@ -5,7 +5,7 @@ const authenticateToken = require('../middleware/auth');
 module.exports = function (io) {
   const router = express.Router();
 
-  // 📌 Crear un nuevo profesor
+  // Crear profesor
   router.post('/', authenticateToken, async (req, res) => {
     try {
       const { nombre, turno } = req.body;
@@ -23,21 +23,22 @@ module.exports = function (io) {
         });
       }
 
-      // Generar código único si no se proporciona
+      // Generar código si no se proporciona
       let codigo = req.body.codigo;
       if (!codigo) {
-        // Crear código a partir del nombre: "Juan Pérez" -> "JUAN-PEREZ"
+        
+        // Normazlización para código
         codigo = nombre
           .toUpperCase()
-          .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-          .replace(/[^A-Z\s]/g, "") // Solo letras y espacios
-          .replace(/\s+/g, '-'); // Espacios por guiones
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^A-Z\s]/g, "")
+          .replace(/\s+/g, '-');
       }
 
-      // Verificar si ya existe un profesor con el mismo código
+      // Verificar si existe el mismo código
       const existingDoc = await db.collection('profesores').doc(codigo).get();
       if (existingDoc.exists) {
-        // Si existe, añadir sufijo numérico
+        // Si existe, añadir sufijo
         let counter = 1;
         let newCodigo = codigo;
         while (true) {
@@ -61,7 +62,6 @@ module.exports = function (io) {
 
       await db.collection('profesores').doc(codigo).set(nuevoProfesor);
 
-      // 🔥 Emitir en tiempo real
       io.emit('profesor.created', nuevoProfesor);
 
       res.status(201).json({ 
@@ -74,7 +74,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener todos los profesores
+  // Obtener profesores
   router.get('/', authenticateToken, async (req, res) => {
     try {
       const snapshot = await db.collection('profesores').get();
@@ -86,7 +86,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener profesor por código
+  // Profesor por código
   router.get('/:codigo', authenticateToken, async (req, res) => {
     try {
       const doc = await db.collection('profesores').doc(req.params.codigo).get();
@@ -121,7 +121,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Actualizar profesor
+  // Actualizar profesor
   router.put('/:codigo', authenticateToken, async (req, res) => {
     try {
       const { codigo } = req.params;
@@ -146,13 +146,12 @@ module.exports = function (io) {
 
       await db.collection('profesores').doc(codigo).update(updateData);
 
-      // 🔥 Emitir en tiempo real
       const updatedProfesor = { codigo, ...updateData };
       io.emit('profesor.updated', updatedProfesor);
 
       // Si se cambia el código del profesor, actualizar los cubículos asignados
       if (updateData.codigo && updateData.codigo !== codigo) {
-        // Actualizar referencia en cubículos
+  
         const cubiculosSnapshot = await db.collection('cubiculos')
           .where('profesorId', '==', codigo)
           .get();
@@ -174,7 +173,7 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Eliminar profesor
+  // Eliminar profesor
   router.delete('/:codigo', authenticateToken, async (req, res) => {
     try {
       const { codigo } = req.params;
@@ -200,7 +199,6 @@ module.exports = function (io) {
 
       await db.collection('profesores').doc(codigo).delete();
 
-      // 🔥 Emitir en tiempo real
       io.emit('profesor.deleted', { codigo });
 
       res.json({ 
@@ -212,19 +210,17 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Buscar profesores por nombre o turno
+  // Buscar profesores
   router.get('/buscar/filtros', authenticateToken, async (req, res) => {
     try {
       const { nombre, turno } = req.query;
       
-      // Esta es una búsqueda básica. Para búsquedas más complejas,
-      // necesitarías un índice o buscar en memoria
       let query = db.collection('profesores');
       
       const snapshot = await query.get();
       let profesores = snapshot.docs.map(doc => doc.data());
       
-      // Filtrar en memoria (Firestore no soporta búsqueda por subcadena fácilmente)
+      // Filtrar en memoria
       if (nombre) {
         const nombreLower = nombre.toLowerCase();
         profesores = profesores.filter(p => 
@@ -243,13 +239,13 @@ module.exports = function (io) {
     }
   });
 
-  // 📌 Obtener profesores sin cubículo asignado
+  // Obtener profesores sin cubículo
   router.get('/sin-cubiculo', authenticateToken, async (req, res) => {
     try {
       const profesoresSnapshot = await db.collection('profesores').get();
       const cubiculosSnapshot = await db.collection('cubiculos').get();
       
-      // Crear conjunto de códigos de profesores con cubículo
+      // Conjunto de profesores con cubículo
       const profesoresConCubiculo = new Set();
       cubiculosSnapshot.docs.forEach(doc => {
         const cubiculo = doc.data();
