@@ -39,11 +39,23 @@ module.exports = function (io) {
       if (profesorId) {
         const profesorDoc = await db.collection('profesores').doc(profesorId).get();
         if (!profesorDoc.exists) {
-          return res.status(404).json({ 
-            error: 'El profesor especificado no existe' 
+          return res.status(404).json({
+            error: 'El profesor especificado no existe'
+          });
+        }
+
+        // Verificar si ya está asignado a otro cubículo
+        const cubiculoExistente = await db.collection('cubiculos')
+          .where('profesorId', '==', profesorId)
+          .get();
+
+        if (!cubiculoExistente.empty) {
+          return res.status(400).json({
+            error: 'Este profesor ya tiene un cubículo asignado'
           });
         }
       }
+
 
       const nuevoCubiculo = {
         codigo,
